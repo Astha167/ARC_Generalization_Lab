@@ -28,3 +28,5 @@ experiments/analysis/
 .vscode/
 .idea/
 scratch/
+*.pptx
+*.mp4
