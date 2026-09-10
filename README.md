@@ -17,6 +17,26 @@ Performance measured on public ARC-AGI-1 evaluation tasks can differ from perfor
 
 **A performance gap does NOT prove memorization.** Possible explanations include benchmark familiarity, distribution mismatch, generator artifacts, task ambiguity, and solver limitations.
 
+## Intended Audience & Prerequisites
+
+**Audience:** Data scientists, ML engineers, and AI researchers interested in benchmark evaluation integrity, test-time adaptation, and abstract reasoning. Also suitable for advanced undergraduates in machine learning courses exploring generalization vs. memorization.
+
+**Prerequisites:**
+- Understanding of neural network training fundamentals (forward pass, backward pass, gradient-based optimization)
+- Basic linear algebra (matrix multiplication, norms)
+- Familiarity with benchmark evaluation concepts (train/test splits, accuracy metrics, data leakage)
+- No prior knowledge of ARC-AGI or BDH-CQ is required — the artifact teaches both
+
+## Learning Objectives
+
+After completing the guided experience, the learner will be able to:
+
+1. **Explain** why high accuracy on a public benchmark does not, by itself, prove generalization to novel tasks.
+2. **Distinguish** benchmark familiarity (performance inflated by prior exposure) from genuine few-shot rule induction.
+3. **Design** a diagnostic comparison between public and freshly generated, distribution-matched evaluation tasks to detect a possible generalization gap.
+4. **Interpret** a public-vs-fresh performance gap as a diagnostic signal consistent with multiple competing hypotheses — not as conclusive proof of memorization.
+5. **Contrast** optimization-based test-time adaptation (gradient updates on test instances) with BDH-CQ's forward-pass recurrent state accumulation (zero parameter updates at inference time).
+
 ## Architecture
 
 ```
