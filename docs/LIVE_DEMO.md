@@ -6,7 +6,7 @@
 
 ## ⏱️ 0:00 – 0:20 | The Hook & The Big Question
 
-- **What you're doing:** Open [ARC Generalization Lab](https://famous-sable-446bd6.netlify.app/) (or `localhost:5173`). Circle your mouse slightly over the main question on screen, then click **`⚡ Start 60-Second Guided Journey`**.
+- **What you're doing:** Open [ARC Generalization Lab](https://frontend-fwohgombc-astha167s-projects.vercel.app/) (or `localhost:5173`). Circle your mouse slightly over the main question on screen, then click **`⚡ Start 60-Second Guided Journey`**.
 - **What to say (Casual & Confident):**
   > "Hey everyone. So, public AI benchmarks like ARC-AGI have been floating around the web since 2019. And that brings up a really uncomfortable question: when a model crushes these benchmarks, is it actually reasoning... or did it just memorize the test set from its training data? 
   > 

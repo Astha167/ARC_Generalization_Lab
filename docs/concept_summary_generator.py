@@ -199,7 +199,7 @@ def build_pdf():
     # 8. REFERENCES & NEXT STEPS
     story.append(Paragraph("8. Where to Learn More & Primary References", ss["SectionHead"]))
     story.append(Paragraph(
-        "<b>Next Steps:</b> Explore the live interactive artifact at <u>famous-sable-446bd6.netlify.app</u> "
+        "<b>Next Steps:</b> Explore the live interactive artifact at <u>frontend-fwohgombc-astha167s-projects.vercel.app</u> "
         "to run the 60-second diagnostic journey, inspect task-generation code in our repository "
         "(github.com/Astha167/ARC_Generalization_Lab), and consult primary sources:",
         ss["SmallNote"]))

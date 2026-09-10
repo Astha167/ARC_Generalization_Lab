@@ -2,7 +2,7 @@
 
 **Does an AI benchmark measure generalization—or familiarity?**
 
-🌐 **Live Public Web Demonstration:** [ARC Generalization Lab — Does benchmark performance survive fresh tasks?](https://famous-sable-446bd6.netlify.app/)  
+🌐 **Live Public Web Demonstration:** [ARC Generalization Lab — Does benchmark performance survive fresh tasks?](https://frontend-fwohgombc-astha167s-projects.vercel.app/)  
 📦 **Public Source Code Repository:** [Astha167/ARC_Generalization_Lab](https://github.com/Astha167/ARC_Generalization_Lab)
 
 An interactive research laboratory that investigates whether AI performance on the public ARC-AGI-1 evaluation set generalizes to freshly generated, distribution-matched ARC-style tasks.
