@@ -202,8 +202,9 @@ def build_pdf():
 
     story.append(Paragraph("Backend (FastAPI)", ss["H2"]))
     story.append(Paragraph(
-        "A Python API server that serves public ARC tasks, executes solvers (heuristic baseline, random baseline, "
-        "optional LLM), runs evaluations, and wraps the upstream arc-task-gen pipeline for live generation. "
+        "A Python API server that serves public ARC tasks, executes solvers (enhanced heuristic families "
+        "covering geometric, color remapping, tiling, and border extraction, alongside a random baseline), "
+        "runs evaluations with 95% Wilson score confidence intervals, and wraps the upstream arc-task-gen pipeline for live generation. "
         "A strict evidence-labelling middleware ensures no result is returned without provenance metadata.",
         ss["Body"]))
 
@@ -340,7 +341,7 @@ def build_pdf():
         ss["BulletItem"]))
     story.append(Paragraph(
         "• <b>Small samples yield wide confidence intervals.</b> Demo-mode experiments with N=5 or N=10 are "
-        "exploratory, not definitive. We prominently warn users about this in the interface.",
+        "exploratory, not definitive. We compute 95% Wilson score confidence intervals on all diagnostic gaps to communicate uncertainty honestly.",
         ss["BulletItem"]))
     story.append(Paragraph(
         "• <b>The gap has multiple possible causes.</b> We never claim that a performance drop \"proves\" "
