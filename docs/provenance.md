@@ -10,6 +10,8 @@
 | FastAPI | Backend web framework | MIT | [PyPI](https://pypi.org/project/fastapi/) | Python backend API server. |
 | Vite | Frontend build tool | MIT | [npm](https://www.npmjs.com/package/vite) | Development server and production build. |
 | NumPy | Numerical computation | BSD-3-Clause | [PyPI](https://pypi.org/project/numpy/) | Backend statistics and validation. |
+| ARC Generalization Lab | Primary application source code repository | MIT | [GitHub](https://github.com/Astha167/ARC_Generalization_Lab) | Public source code repository for competition submission. |
+| UI Glyphs & Icons | Interactive interface symbols & badges | Unicode Standard / System Fonts | Native Unicode Glyphs | Standardized text symbols and emoji rendered without external image assets. |
 
 ## Attribution
 

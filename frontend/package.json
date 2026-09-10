@@ -2,6 +2,11 @@
   "name": "arc-generalization-lab",
   "version": "1.0.0",
   "description": "ARC Generalization Lab — Investigating benchmark generalization on fresh ARC-style tasks",
+  "homepage": "https://famous-sable-446bd6.netlify.app/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Astha167/ARC_Generalization_Lab.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
