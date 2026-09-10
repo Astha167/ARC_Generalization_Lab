@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# Private generated data — must not be committed
+data/generations/
+data/generations_stratified/
+data/arc_agi_eval.json
+data/arc_agi_eval_descriptions.json
+data/arc_agi_eval_categories.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Experiments with private data
+experiments/results/
+experiments/analysis/
+
+# IDE
+.vscode/
+.idea/

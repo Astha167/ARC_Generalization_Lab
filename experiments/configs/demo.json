@@ -1,0 +1,10 @@
+{
+  "name": "demo_experiment",
+  "description": "Demo experiment using hand-crafted tasks. Results are labeled DEMO DATA.",
+  "dataset_public": "demo",
+  "dataset_fresh": "demo",
+  "solver": "heuristic",
+  "max_tasks": 5,
+  "seed": null,
+  "notes": "This configuration uses demo data only. Not an experimental result."
+}

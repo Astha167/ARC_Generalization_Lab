@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARC Generalization Lab — Does benchmark performance survive fresh tasks?</title>
+  <meta name="description" content="An interactive research laboratory investigating whether AI performance on public ARC-AGI-1 tasks generalizes to freshly generated, distribution-matched tasks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation -->
+    <nav id="main-nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-inner">
+        <a href="#hero" class="nav-logo" aria-label="ARC Generalization Lab home">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">ARC<span class="logo-accent">GenLab</span></span>
+        </a>
+        <div class="nav-links">
+          <a href="#journey" class="nav-link" style="color:var(--text-accent);font-weight:700;">⚡ 60s Journey</a>
+          <a href="#understand" class="nav-link">Why Fresh?</a>
+          <a href="#explore" class="nav-link">Explore ARC</a>
+          <a href="#experiment" class="nav-link">Experiment</a>
+          <a href="#pipeline" class="nav-link">Pipeline</a>
+          <a href="#audit" class="nav-link">Audit</a>
+          <a href="#bdh" class="nav-link">BDH-CQ</a>
+          <a href="#methodology" class="nav-link">Method</a>
+        </div>
+        <div class="nav-mode" id="mode-badge">
+          <span class="mode-dot"></span>
+          <span class="mode-label">DEMO MODE</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- SECTION 1: HERO -->
+    <section id="hero" class="section hero-section">
+      <div class="hero-content">
+        <p class="hero-label">ARC GENERALIZATION LAB</p>
+        <h1 class="hero-title">Does an AI benchmark measure<br><span class="hero-accent">generalization—or familiarity?</span></h1>
+        <p class="hero-subtitle">Compare performance on public ARC tasks with freshly generated tasks matched to the same measurable distribution. The gap is the diagnostic.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="start-journey-btn" onclick="startGuidedJourney()">⚡ Start 60-Second Guided Journey</button>
+          <button class="btn btn-secondary" onclick="scrollToSection('experiment')">Run the Experiment</button>
+          <button class="btn btn-secondary" onclick="scrollToSection('explore')">Explore Freely</button>
+        </div>
+        <div class="hero-stat-row" id="hero-stats">
+          <div class="hero-stat">
+            <span class="stat-value" id="stat-public-count">400</span>
+            <span class="stat-label">Public ARC tasks</span>
+          </div>
+          <div class="hero-stat-divider">vs</div>
+          <div class="hero-stat">
+            <span class="stat-value" id="stat-fresh-count">?</span>
+            <span class="stat-label">Fresh generated tasks</span>
+          </div>
+          <div class="hero-stat-divider">→</div>
+          <div class="hero-stat">
+            <span class="stat-value" id="stat-gap">?</span>
+            <span class="stat-label">Performance gap</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GUIDED 60-SECOND LEARNER JOURNEY -->
+    <section id="journey" class="section section-guided">
+      <div class="section-inner">
+        <div class="journey-header">
+          <span class="section-tag">GUIDED EXPERIENCE</span>
+          <h2 class="section-title">The 60-Second Generalization Journey</h2>
+          <p class="section-desc">
+            A fast, 5-step interactive walkthrough testing the central claim:
+            <em>Does solving public benchmark tasks well establish generalization, or does benchmark familiarity play a role?</em>
+          </p>
+          <div class="journey-stepper">
+            <div class="step-indicator active" id="step-ind-1">1. Try Task</div>
+            <div class="step-indicator" id="step-ind-2">2. Question</div>
+            <div class="step-indicator" id="step-ind-3">3. Test</div>
+            <div class="step-indicator" id="step-ind-4">4. Interpret</div>
+            <div class="step-indicator" id="step-ind-5">5. Adapt (BDH-CQ)</div>
+          </div>
+        </div>
+
+        <!-- STEP 1: TRY -->
+        <div class="journey-card" id="journey-step-1">
+          <div class="journey-card-header">
+            <span class="badge-step">STEP 1 OF 5: TRY</span>
+            <h3>Infer the Rule from Sparse Examples</h3>
+            <p>Study the input → output demonstration pair below. What is the transformation?</p>
+          </div>
+          <div class="journey-card-body">
+            <div class="journey-task-row">
+              <div class="j-pair">
+                <span class="j-label">Demonstration Input</span>
+                <div id="j-step1-demo-in" class="arc-grid-container"></div>
+              </div>
+              <div class="j-arrow">→</div>
+              <div class="j-pair">
+                <span class="j-label">Demonstration Output</span>
+                <div id="j-step1-demo-out" class="arc-grid-container"></div>
+              </div>
+            </div>
+            <div class="journey-test-row">
+              <div class="j-pair">
+                <span class="j-label">Unseen Test Input</span>
+                <div id="j-step1-test-in" class="arc-grid-container"></div>
+              </div>
+              <div class="j-arrow">→</div>
+              <div class="j-pair">
+                <span class="j-label">Predict or Inspect Solver Output</span>
+                <div class="j-choice-actions">
+                  <button class="btn btn-sm btn-primary" onclick="jInspectSolver()">🤖 Run Heuristic Solver</button>
+                  <button class="btn btn-sm" onclick="jRevealReference()">👁️ Reveal Reference Output</button>
+                </div>
+                <div id="j-step1-prediction" class="arc-grid-container" style="margin-top:8px;"></div>
+                <div id="j-step1-status" class="j-status-text"></div>
+              </div>
+            </div>
+          </div>
+          <div class="journey-card-footer">
+            <button class="btn btn-primary" id="j-step1-next" onclick="goToJourneyStep(2)">Proceed to Step 2: The Core Question →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: QUESTION -->
+        <div class="journey-card hidden" id="journey-step-2">
+          <div class="journey-card-header">
+            <span class="badge-step">STEP 2 OF 5: QUESTION</span>
+            <h3>Does High Benchmark Accuracy Prove Generalization?</h3>
+            <p>Consider an AI system that achieves 85% accuracy on public ARC evaluation tasks.</p>
+          </div>
+          <div class="journey-card-body">
+            <div class="j-question-box">
+              <p class="j-prompt">
+                <strong>Does solving public benchmark tasks well prove that the system has learned the underlying reasoning rule?</strong>
+              </p>
+              <div class="j-binary-choices">
+                <button class="btn btn-opt" onclick="jAnswerStep2(true, this)">YES — High benchmark accuracy is sufficient proof</button>
+                <button class="btn btn-opt" onclick="jAnswerStep2(false, this)">NO — Public accuracy alone cannot distinguish generalization from familiarity</button>
+              </div>
+              <div id="j-step2-feedback" class="j-feedback-box hidden"></div>
+            </div>
+          </div>
+          <div class="journey-card-footer">
+            <button class="btn btn-secondary" onclick="goToJourneyStep(1)">← Back</button>
+            <button class="btn btn-primary hidden" id="j-step2-next" onclick="goToJourneyStep(3)">Proceed to Step 3: The Public vs Fresh Test →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: TEST -->
+        <div class="journey-card hidden" id="journey-step-3">
+          <div class="journey-card-header">
+            <span class="badge-step">STEP 3 OF 5: TEST</span>
+            <h3>Public Tasks vs. Fresh Distribution-Matched Tasks</h3>
+            <p>We evaluate the exact same solver on both public ARC benchmark tasks and freshly generated tasks with matching grid sizes and color counts.</p>
+          </div>
+          <div class="journey-card-body">
+            <div class="j-experiment-trigger">
+              <button class="btn btn-primary btn-lg" id="j-run-exp-btn" onclick="jRunExperiment()">▶ Run Diagnostic Comparison</button>
+              <span id="j-exp-status-label" style="font-size:12px;color:var(--text-muted);margin-left:12px;">Uses active backend solver pipeline</span>
+            </div>
+            <div id="j-exp-results-panel" class="j-results-panel hidden">
+              <div class="j-scores-row">
+                <div class="j-score-card public-card">
+                  <span class="j-card-label">PUBLIC ARC TASKS</span>
+                  <span class="j-card-val" id="j-public-score">—</span>
+                  <span class="j-card-sub" id="j-public-desc">Evaluation set</span>
+                </div>
+                <div class="j-gap-divider">
+                  <span class="j-gap-val" id="j-gap-score">—</span>
+                  <span class="j-gap-lbl">Diagnostic Gap</span>
+                </div>
+                <div class="j-score-card fresh-card">
+                  <span class="j-card-label">FRESH MATCHED TASKS</span>
+                  <span class="j-card-val" id="j-fresh-score">—</span>
+                  <span class="j-card-sub" id="j-fresh-desc">Freshly generated</span>
+                </div>
+              </div>
+              <div id="j-exp-evidence-badge" style="margin-top:12px;"></div>
+            </div>
+          </div>
+          <div class="journey-card-footer">
+            <button class="btn btn-secondary" onclick="goToJourneyStep(2)">← Back</button>
+            <button class="btn btn-primary hidden" id="j-step3-next" onclick="goToJourneyStep(4)">Proceed to Step 4: Interpret the Gap →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4: INTERPRET -->
+        <div class="journey-card hidden" id="journey-step-4">
+          <div class="journey-card-header">
+            <span class="badge-step">STEP 4 OF 5: INTERPRET</span>
+            <h3>What Does the Performance Gap Actually Prove?</h3>
+            <p>Suppose an evaluation shows public accuracy is 30% and fresh accuracy is 18% (a 12-point gap).</p>
+          </div>
+          <div class="journey-card-body">
+            <div class="j-question-box">
+              <p class="j-prompt">
+                <strong>If the fresh score is lower than the public score, what does that prove?</strong>
+              </p>
+              <div class="j-quiz-choices">
+                <button class="btn btn-opt" data-opt="A" onclick="jAnswerStep4('A', this)">
+                  A. Memorization is proven — the model definitely saw the public tasks.
+                </button>
+                <button class="btn btn-opt" data-opt="B" onclick="jAnswerStep4('B', this)">
+                  B. The public ARC benchmark is fundamentally broken or invalid.
+                </button>
+                <button class="btn btn-opt" data-opt="C" onclick="jAnswerStep4('C', this)">
+                  C. There is evidence consistent with a generalization gap, but multiple explanations remain (familiarity, distribution mismatch, generator artifacts, task ambiguity, solver limitations).
+                </button>
+                <button class="btn btn-opt" data-opt="D" onclick="jAnswerStep4('D', this)">
+                  D. Nothing can be learned; benchmark evaluation is entirely meaningless.
+                </button>
+              </div>
+              <div id="j-step4-feedback" class="j-feedback-box hidden"></div>
+            </div>
+          </div>
+          <div class="journey-card-footer">
+            <button class="btn btn-secondary" onclick="goToJourneyStep(3)">← Back</button>
+            <button class="btn btn-primary hidden" id="j-step4-next" onclick="goToJourneyStep(5)">Proceed to Step 5: Test-Time Adaptation & BDH-CQ →</button>
+          </div>
+        </div>
+
+        <!-- STEP 5: ADAPTATION BRIDGE (BDH-CQ) -->
+        <div class="journey-card hidden" id="journey-step-5">
+          <div class="journey-card-header">
+            <span class="badge-step">STEP 5 OF 5: TEST-TIME ADAPTATION</span>
+            <h3>How Can a Model Learn from Demonstrations at Evaluation Time?</h3>
+            <p>
+              ARC tasks provide demonstration examples at test time. How can an architecture adapt to these demonstrations?
+            </p>
+          </div>
+          <div class="journey-card-body">
+            <div class="j-bridge-content">
+              <p>
+                Traditional deep learning requires backpropagation and parameter updates ($\nabla_W \mathcal{L} \neq 0$).
+                In contrast, <strong>BDH-CQ</strong> (Dragon Hatchling) demonstrates how a model can accumulate task context in an
+                evolving <em>recurrent associative state</em> during the forward pass while parameters remain strictly fixed ($W_{\text{fixed}}$).
+              </p>
+              <div class="j-bridge-action">
+                <button class="btn btn-primary btn-lg" onclick="scrollToSection('bdh')">
+                  🔬 Inspect & Manipulate BDH-CQ Recurrent State ↓
+                </button>
+                <button class="btn btn-secondary" onclick="scrollToSection('explore')">
+                  Explore ARC Playground Freely
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="journey-card-footer">
+            <button class="btn btn-secondary" onclick="goToJourneyStep(4)">← Back</button>
+            <span style="font-size:12px;color:var(--success);font-weight:600;">✓ 60-Second Walkthrough Completed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: WHY FRESH EVALUATION? -->
+    <section id="understand" class="section">
+      <div class="section-inner">
+        <span class="section-tag">THE PROBLEM</span>
+        <h2 class="section-title">Why public benchmarks can mislead</h2>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <div class="explain-icon">📊</div>
+            <h3>Public benchmarks are public</h3>
+            <p>The ARC-AGI-1 evaluation set has been publicly available since 2019. It appears in web-scraped training corpora. A model's score on it may reflect familiarity, not just fresh rule induction.</p>
+          </div>
+          <div class="explain-card">
+            <div class="explain-icon">🔄</div>
+            <h3>Distribution matching</h3>
+            <p>We generate fresh tasks whose measurable properties — grid size, color count, training pair count — match the public distribution. This makes scores comparable while removing familiarity as a confound.</p>
+          </div>
+          <div class="explain-card">
+            <div class="explain-icon">⚖️</div>
+            <h3>The gap is the signal</h3>
+            <p>If a solver scores higher on public tasks than on fresh ones, the difference is a diagnostic signal — consistent with familiarity, but also with distribution mismatch, generator artifacts, or difficulty shifts.</p>
+          </div>
+        </div>
+        <div class="caution-box" role="note">
+          <strong>Scientific caution:</strong> A performance gap does NOT prove memorization. It provides a diagnostic signal consistent with multiple explanations including benchmark familiarity, task-distribution mismatch, generator artifacts, task ambiguity, and solver limitations.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: EXPLORE ARC -->
+    <section id="explore" class="section section-dark">
+      <div class="section-inner">
+        <span class="section-tag">INTERACTIVE</span>
+        <h2 class="section-title">Solve an ARC task</h2>
+        <p class="section-desc">ARC tasks test few-shot rule induction: study the training examples, infer the transformation rule, and predict the test output.</p>
+
+        <div class="task-controls">
+          <div class="dataset-selector">
+            <button class="ds-btn active" data-dataset="demo" onclick="switchDataset('demo')">
+              <span class="ds-badge demo">DEMO</span> Demo Tasks
+            </button>
+            <button class="ds-btn" data-dataset="public" onclick="switchDataset('public')">
+              <span class="ds-badge public">PUBLIC</span> ARC-AGI-1
+            </button>
+          </div>
+          <div class="task-nav">
+            <button class="btn btn-sm" id="prev-task-btn" onclick="prevTask()" aria-label="Previous task">← Prev</button>
+            <span class="task-id-display" id="task-id-label">Loading...</span>
+            <button class="btn btn-sm" id="next-task-btn" onclick="nextTask()" aria-label="Next task">Next →</button>
+          </div>
+        </div>
+
+        <!-- Training examples -->
+        <div id="training-section">
+          <h3 class="sub-heading">Training Examples <span class="hint">— study the input → output pattern</span></h3>
+          <div id="training-pairs" class="training-pairs"></div>
+        </div>
+
+        <!-- Test input -->
+        <div id="test-section">
+          <h3 class="sub-heading">Test Input <span class="hint">— predict the output</span></h3>
+          <div class="test-area">
+            <div class="grid-panel">
+              <span class="panel-label">Input</span>
+              <div id="test-input-grid" class="arc-grid-container"></div>
+            </div>
+            <div class="grid-panel prediction-panel">
+              <span class="panel-label">Your Prediction</span>
+              <div id="prediction-grid" class="arc-grid-container editable"></div>
+              <div class="color-palette" id="color-palette" role="toolbar" aria-label="Color palette"></div>
+              <div class="edit-controls">
+                <button class="btn btn-xs" onclick="clearPrediction()">Clear</button>
+                <button class="btn btn-xs" onclick="resetPrediction()">Reset</button>
+                <button class="btn btn-xs" onclick="undoPrediction()">Undo</button>
+              </div>
+              <button class="btn btn-primary btn-submit" id="submit-btn" onclick="submitPrediction()">Submit Prediction</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results (shown after submission) -->
+        <div id="result-section" class="result-section hidden">
+          <h3 class="sub-heading">Result</h3>
+          <div class="result-grids">
+            <div class="grid-panel">
+              <span class="panel-label">Your Prediction</span>
+              <div id="result-predicted" class="arc-grid-container"></div>
+            </div>
+            <div class="grid-panel">
+              <span class="panel-label">Ground Truth</span>
+              <div id="result-truth" class="arc-grid-container"></div>
+            </div>
+            <div class="grid-panel">
+              <span class="panel-label">Difference</span>
+              <div id="result-diff" class="arc-grid-container"></div>
+            </div>
+          </div>
+          <div class="result-stats" id="result-stats"></div>
+        </div>
+
+        <!-- Solver comparison -->
+        <div id="solver-section">
+          <h3 class="sub-heading">Compare with Baseline Solver</h3>
+          <div class="solver-controls">
+            <select id="solver-select" class="select-input" aria-label="Select solver">
+              <option value="heuristic">Heuristic Baseline</option>
+              <option value="random">Random Baseline</option>
+            </select>
+            <button class="btn btn-secondary" id="run-solver-btn" onclick="runSolver()">Run Solver</button>
+          </div>
+          <div id="solver-result" class="solver-result hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: EXPERIMENT LAB -->
+    <section id="experiment" class="section">
+      <div class="section-inner">
+        <span class="section-tag">CORE EXPERIMENT</span>
+        <h2 class="section-title">Public vs Fresh — The Generalization Test</h2>
+        <p class="section-desc">Run the same solver on public ARC tasks and freshly generated tasks. Compare performance to measure the public-to-fresh gap.</p>
+
+        <div class="experiment-setup">
+          <div class="exp-config">
+            <label class="config-label">Solver</label>
+            <select id="exp-solver" class="select-input">
+              <option value="heuristic">Heuristic Baseline</option>
+              <option value="random">Random Baseline</option>
+            </select>
+          </div>
+          <div class="exp-config">
+            <label class="config-label">Tasks per dataset</label>
+            <select id="exp-n" class="select-input">
+              <option value="5">5 (fast)</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-lg" id="run-experiment-btn" onclick="runExperiment()">
+            ▶ Run Experiment
+          </button>
+        </div>
+
+        <div id="experiment-results" class="experiment-results hidden">
+          <div class="gap-viz">
+            <div class="gap-dataset">
+              <div class="gap-bar-label">
+                <span class="ds-badge public">PUBLIC</span>
+                <span class="gap-score" id="exp-public-score">—</span>
+              </div>
+              <div class="gap-bar-track">
+                <div class="gap-bar gap-bar-public" id="exp-public-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="gap-dataset">
+              <div class="gap-bar-label">
+                <span class="ds-badge fresh">FRESH</span>
+                <span class="gap-score" id="exp-fresh-score">—</span>
+              </div>
+              <div class="gap-bar-track">
+                <div class="gap-bar gap-bar-fresh" id="exp-fresh-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="gap-summary" id="gap-summary"></div>
+          </div>
+
+          <div class="result-label" id="exp-data-label"></div>
+
+          <div class="exp-table-container">
+            <table class="exp-table" id="exp-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>Public</th>
+                  <th>Fresh</th>
+                  <th>Difference</th>
+                </tr>
+              </thead>
+              <tbody id="exp-table-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Failure analysis -->
+          <div id="failure-section" class="failure-section">
+            <h3 class="sub-heading">Failure Analysis</h3>
+            <p class="section-desc">Tasks where the solver failed — inspect what went wrong.</p>
+            <div id="failure-list" class="failure-list"></div>
+          </div>
+
+          <div class="interpret-box">
+            <h4>Interpreting the Gap</h4>
+            <p>A performance difference between public and fresh tasks is a <strong>diagnostic signal</strong>, not proof of memorization.</p>
+            <div class="interpret-causes">
+              <div class="cause"><span class="cause-icon">🔍</span> <strong>Benchmark familiarity</strong> — the model may have encountered public tasks during training</div>
+              <div class="cause"><span class="cause-icon">📐</span> <strong>Distribution mismatch</strong> — generated tasks may differ in unmeasured ways</div>
+              <div class="cause"><span class="cause-icon">⚙️</span> <strong>Generator artifacts</strong> — LLM-generated tasks may have systematic biases</div>
+              <div class="cause"><span class="cause-icon">❓</span> <strong>Task ambiguity</strong> — some generated tasks may have unclear rules</div>
+              <div class="cause"><span class="cause-icon">📏</span> <strong>Difficulty shift</strong> — fresh tasks may happen to be harder or easier</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: GENERATION PIPELINE -->
+    <section id="pipeline" class="section section-dark">
+      <div class="section-inner">
+        <span class="section-tag">METHODOLOGY</span>
+        <h2 class="section-title">How fresh tasks are generated</h2>
+        <p class="section-desc">The <a href="https://github.com/pathwaycom/arc-task-gen" target="_blank" rel="noopener">pathwaycom/arc-task-gen</a> pipeline generates distribution-matched ARC tasks through a multi-stage process.</p>
+
+        <div class="pipeline-viz">
+          <div class="pipe-step">
+            <div class="pipe-num">1</div>
+            <div class="pipe-content">
+              <h4>Distribution Analysis</h4>
+              <p>Measure the public ARC-AGI-1 evaluation set: grid dimensions, color counts, training pair counts.</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step">
+            <div class="pipe-num">2</div>
+            <div class="pipe-content">
+              <h4>Joint Constraint Sampling</h4>
+              <p>Sample a complete slot from a single real eval task, preserving natural covariance between grid size, colour count, and pair counts.</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step">
+            <div class="pipe-num">3</div>
+            <div class="pipe-content">
+              <h4>LLM Task Generation</h4>
+              <p>An LLM invents a genuinely new transformation rule matching the sampled constraints. One task per call.</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step">
+            <div class="pipe-num">4</div>
+            <div class="pipe-content">
+              <h4>Structural Validation</h4>
+              <p>Verify: valid 2D grids, cell values 0–9, no ragged rows, minimum training pairs.</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step">
+            <div class="pipe-num">5</div>
+            <div class="pipe-content">
+              <h4>Semantic Deduplication</h4>
+              <p>Embed rule descriptions; remove generated tasks too similar to each other (cosine > 0.80).</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step">
+            <div class="pipe-num">6</div>
+            <div class="pipe-content">
+              <h4>Public-Eval Similarity Filter</h4>
+              <p>Remove tasks whose rule description is too close to any official eval task (cosine > 0.92).</p>
+            </div>
+          </div>
+          <div class="pipe-arrow">↓</div>
+          <div class="pipe-step pipe-step-final">
+            <div class="pipe-num">✓</div>
+            <div class="pipe-content">
+              <h4>Fresh Private Task Set</h4>
+              <p>Distribution-matched, structurally valid, semantically novel tasks ready for evaluation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="caution-box" role="note">
+          <strong>Important limitation:</strong> Solvability is not verified programmatically. A generated task passes structural validation but may have an ambiguous or uninferrable rule. This is why a blind human audit is valuable.
+        </div>
+
+        <div class="pipeline-stats" id="pipeline-stats">
+          <h3 class="sub-heading">Distribution Comparison</h3>
+          <p class="section-desc">Measurable properties of public vs demo tasks. <span class="result-label">PRECOMPUTED FROM DEMO DATA</span></p>
+          <div id="dist-charts" class="dist-charts"></div>
+        </div>
+        <!-- Generation Quality Dashboard -->
+        <div class="gen-quality" id="gen-quality">
+          <h3 class="sub-heading">Generation Quality Dashboard</h3>
+          <p class="section-desc">Quality control metrics from the generation pipeline. <span class="result-label" id="gen-quality-label">NO GENERATION DATA</span></p>
+          <div class="quality-grid" id="quality-grid">
+            <div class="quality-card">
+              <span class="quality-val" id="q-requested">—</span>
+              <span class="quality-lbl">Tasks Requested</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val quality-good" id="q-accepted">—</span>
+              <span class="quality-lbl">Tasks Accepted</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val quality-warn" id="q-structural">—</span>
+              <span class="quality-lbl">Structural Failures</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val quality-warn" id="q-dedup">—</span>
+              <span class="quality-lbl">Duplicate Rejections</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val quality-warn" id="q-evalsim">—</span>
+              <span class="quality-lbl">Eval-Similarity Rejections</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val" id="q-rounds">—</span>
+              <span class="quality-lbl">Convergence Rounds</span>
+            </div>
+            <div class="quality-card">
+              <span class="quality-val" id="q-success-rate">—</span>
+              <span class="quality-lbl">Success Rate</span>
+            </div>
+          </div>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:12px;">These metrics update after a live generation run. They demonstrate that the system performs real quality control — not all LLM outputs are accepted.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: BLIND SOLVABILITY AUDIT -->
+    <section id="audit" class="section">
+      <div class="section-inner">
+        <span class="section-tag">QUALITY CONTROL</span>
+        <h2 class="section-title">Blind Solvability Audit</h2>
+        <p class="section-desc">The generator produces structurally valid tasks — but are they actually <em>solvable</em>? Solvability is not verified programmatically. This audit lets a human judge without seeing the intended rule.</p>
+
+        <div class="audit-explanation">
+          <div class="explain-grid">
+            <div class="explain-card">
+              <div class="explain-icon">🔬</div>
+              <h3>Task Quality ≠ Task Novelty</h3>
+              <p>A task can be novel (doesn't resemble known tasks) yet ambiguous (unclear transformation rule). The generation pipeline checks novelty. The audit checks quality.</p>
+            </div>
+            <div class="explain-card">
+              <div class="explain-icon">👁️</div>
+              <h3>Blind Protocol</h3>
+              <p>The evaluator sees only training examples — no rule description, no test output, no generation metadata. They classify the task based solely on the demonstrations.</p>
+            </div>
+            <div class="explain-card">
+              <div class="explain-icon">📋</div>
+              <h3>Classification</h3>
+              <p>Each task is classified as: <strong>SOLVABLE</strong> (clear rule), <strong>AMBIGUOUS</strong> (multiple valid interpretations), or <strong>INVALID</strong> (broken/inconsistent).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="audit-panel" id="audit-panel">
+          <h3 class="sub-heading">Audit a Task</h3>
+          <p class="section-desc">Study the training examples below. Can you determine the transformation rule?</p>
+
+          <div id="audit-task-display">
+            <div class="task-nav" style="margin-bottom:16px;">
+              <button class="btn btn-sm" onclick="prevAuditTask()">← Prev</button>
+              <span class="task-id-display" id="audit-task-label">Select a task</span>
+              <button class="btn btn-sm" onclick="nextAuditTask()">Next →</button>
+            </div>
+            <div id="audit-training-pairs" class="training-pairs"></div>
+          </div>
+
+          <div class="audit-controls" style="margin-top:20px;">
+            <p style="font-weight:600;margin-bottom:12px;">Based on the training examples alone, this task is:</p>
+            <div class="audit-buttons">
+              <button class="btn audit-btn" data-verdict="solvable" onclick="submitAuditVerdict('solvable', this)">✓ SOLVABLE — clear rule</button>
+              <button class="btn audit-btn" data-verdict="ambiguous" onclick="submitAuditVerdict('ambiguous', this)">? AMBIGUOUS — multiple interpretations</button>
+              <button class="btn audit-btn" data-verdict="invalid" onclick="submitAuditVerdict('invalid', this)">✗ INVALID — broken or inconsistent</button>
+            </div>
+          </div>
+
+          <div id="audit-results" class="audit-results" style="margin-top:24px;">
+            <h4 style="margin-bottom:12px;">Audit Results</h4>
+            <div id="audit-summary" class="audit-summary"></div>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">These results are from your own assessment. They are not precomputed or fabricated.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: BDH-CQ SUBSTANTIVE EDUCATIONAL MODULE -->
+    <section id="bdh" class="section section-dark">
+      <div class="section-inner">
+        <span class="section-tag">REASONING & RECURRENT MEMORY</span>
+        <h2 class="section-title">BDH-CQ: Contextual Demonstration Adaptation</h2>
+
+        <!-- Explicit Learning Objective -->
+        <div class="bdh-objective-box" role="region" aria-label="Learning Objective">
+          <div class="objective-header">
+            <span class="objective-badge">EXPLICIT LEARNING OBJECTIVE</span>
+          </div>
+          <p class="objective-text">
+            After this interaction, you should be able to explain how <strong>BDH-CQ</strong> can incorporate demonstration information through contextual/recurrent associative state <em>without performing parameter updates or backpropagation</em> on the evaluation task.
+          </p>
+        </div>
+
+        <div class="bdh-content">
+          <div class="bdh-text">
+            <h3>Architecture & Adaptation Mechanism</h3>
+            <p><strong>BDH-CQ</strong> is built on Dragon Hatchling (BDH), a recurrent architecture where units communicate through low-rank interactions and maintain context in an evolving associative memory matrix. At test time, BDH-CQ processes task demonstrations by updating its recurrent latent state, solving queries through iterative internal recurrent computation — <strong>without parameter fine-tuning</strong> and without external scratchpads.</p>
+
+            <!-- Formalism & Conceptual State Update -->
+            <div class="bdh-formula-card">
+              <h4>Conceptual State Update Equation <span class="formula-badge">Conceptual Teaching Abstraction</span></h4>
+              <div class="formula-display" aria-label="Conceptual state update equation">
+                $$S_{t+1} = \alpha S_t + (1 - \alpha) \cdot \Big(\phi(x_t) \otimes \psi(y_t)\Big)$$
+                $$\hat{y}_{\text{test}} = \operatorname{Readout}\Big(S_{T}, \phi(x_{\text{test}})\Big)$$
+              </div>
+              <p class="formula-caption">
+                <em>Notice:</em> Model weights $W$ remain fixed ($\nabla_W \mathcal{L} = 0$). Only the transient recurrent associative state $S \in \mathbb{R}^{D \times D}$ evolves as demonstrations $(x_t, y_t)$ are streamed into context.
+              </p>
+            </div>
+
+            <!-- Published Results -->
+            <div class="bdh-evidence">
+              <h4>Published Results <span class="result-label">PUBLISHED RESULT — PATHWAY</span></h4>
+              <table class="compact-table">
+                <tr><td>Architecture</td><td>BDH-CQ (150M parameters)</td></tr>
+                <tr><td>ARC-AGI-1 Public Eval</td><td>29.5% pass@2</td></tr>
+                <tr><td>Inference Cost per Task</td><td>$0.0007</td></tr>
+                <tr><td>Adaptation Mechanism</td><td>Evolving recurrent associative state (zero parameter updates at test time)</td></tr>
+                <tr><td>Reasoning Substrate</td><td>Iterative latent-space computation</td></tr>
+              </table>
+              <p class="evidence-note">Source: Engdahl et al. (2026), <em>BDH-CQ: Introducing In-Context Learning with Recurrent Latent Reasoning</em> (arXiv:2608.09888) & <a href="https://github.com/pathwaycom/arc-task-gen" target="_blank" rel="noopener">pathwaycom/arc-task-gen</a>. Developer-reported baseline, not an independent re-training.</p>
+            </div>
+
+            <!-- Interactive Substrate Box -->
+            <div class="bdh-interactive-container" id="bdh-interactive">
+              <div class="interactive-header">
+                <span class="interactive-badge">INTERACTIVE SUBSTRATE</span>
+                <h3>Demonstration-Driven State Evolution Sandbox</h3>
+                <span class="toy-disclaimer">Educational toy model inspired by the published BDH-CQ mechanism — NOT the official BDH-CQ implementation.</span>
+              </div>
+
+              <!-- Interactive Controls (Real Concept Variables) -->
+              <div class="bdh-controls-bar">
+                <div class="control-item">
+                  <label for="bdh-pattern-select" class="control-label">Demonstration Rule:</label>
+                  <select id="bdh-pattern-select" class="select-input" onchange="updateBdhSimulation()">
+                    <option value="color_invert">Pattern A: Foreground Color Swap (Blue ↔ Red)</option>
+                    <option value="diagonal_shift">Pattern B: Directional Shift (Down-Right Translation)</option>
+                    <option value="corner_echo">Pattern C: Boundary Reflection (Corner Echo)</option>
+                  </select>
+                </div>
+
+                <div class="control-item">
+                  <label for="bdh-demo-count" class="control-label">Demonstrations ($T$):</label>
+                  <select id="bdh-demo-count" class="select-input" onchange="updateBdhSimulation()">
+                    <option value="1">1 Demonstration (Under-constrained)</option>
+                    <option value="2" selected>2 Demonstrations (Standard ARC Few-Shot)</option>
+                    <option value="3">3 Demonstrations (Reinforced Context)</option>
+                  </select>
+                </div>
+
+                <div class="control-item">
+                  <label for="bdh-alpha-decay" class="control-label">Retention Rate ($\alpha$):</label>
+                  <select id="bdh-alpha-decay" class="select-input" onchange="updateBdhSimulation()">
+                    <option value="0.30">Low (0.30) — rapid overwriting</option>
+                    <option value="0.65" selected>Balanced (0.65) — stable accumulation</option>
+                    <option value="0.90">High (0.90) — strong inertia</option>
+                  </select>
+                </div>
+
+                <div class="control-item" style="align-self: flex-end;">
+                  <button class="btn btn-sm" onclick="resetBdhSimulation()">↺ Reset State</button>
+                </div>
+              </div>
+
+              <!-- Visualized Pipeline Flow -->
+              <div class="bdh-flow-grid">
+                <!-- Demonstrations Column -->
+                <div class="bdh-column" id="bdh-demos-column">
+                  <h4>1. Demonstrations $(x_t \to y_t)$</h4>
+                  <div id="bdh-demos-list" class="bdh-demos-list"></div>
+                </div>
+
+                <!-- Recurrent State Column -->
+                <div class="bdh-column">
+                  <h4>2. Visible Recurrent State $S_t \in \mathbb{R}^{4 \times 4}$</h4>
+                  <div class="state-view-wrapper">
+                    <div id="bdh-matrix-display" class="matrix-grid" aria-live="polite"></div>
+                    <div class="state-metrics">
+                      <div class="state-metric-line">
+                        <span>Associative Norm $\|S\|_F$:</span>
+                        <strong id="bdh-frobenius-norm">0.00</strong>
+                      </div>
+                      <div class="state-metric-line">
+                        <span>Cumulative Entropy:</span>
+                        <strong id="bdh-state-entropy">0.00</strong>
+                      </div>
+                      <div class="state-metric-line">
+                        <span>Test-Time Param Updates:</span>
+                        <strong style="color:var(--success);">NONE (Parameters $W$: FIXED)</strong>
+                      </div>
+                      <div class="state-metric-line">
+                        <span>Gradient Indicator $\nabla_W \mathcal{L}$:</span>
+                        <strong style="color:var(--text-muted);font-size:11px;">0 (Pedagogical Indicator)</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Readout & Prediction Column -->
+                <div class="bdh-column">
+                  <h4>3. State Readout $\hat{y}_{\text{test}}$</h4>
+                  <div class="readout-panel">
+                    <div class="query-block">
+                      <span class="panel-label">Unseen Query Input $x_{\text{test}}$</span>
+                      <div id="bdh-query-grid" class="arc-grid-container"></div>
+                    </div>
+                    <div class="readout-arrow">↓ Readout $(S_T \cdot \phi(x_{\text{test}}))$</div>
+                    <div class="prediction-block">
+                      <span class="panel-label">Contextual Output Prediction $\hat{y}_{\text{test}}$</span>
+                      <div id="bdh-prediction-grid" class="arc-grid-container"></div>
+                      <span id="bdh-confidence-tag" class="confidence-tag">Confidence: 0%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mathematical Details Disclosure -->
+              <div class="bdh-math-box">
+                <h5>Toy Model Simplification Specification</h5>
+                <p>
+                  Each ARC grid is encoded via an invariant feature projector $\phi(x) \in \mathbb{R}^4$ capturing color histogram and positional center-of-mass moments. The associative state matrix $S$ acts as a linear associative memory accumulating outer-product bindings $\phi(x_t) \psi(y_t)^T$. The readout computes $\hat{y} = \operatorname{Decode}(S^T \phi(x_{\text{test}}))$. This illustrates the computational power and failure modes of associative recurrent accumulation without replicating BDH-CQ's full multi-head low-rank recurrent layers.
+                </p>
+              </div>
+            </div>
+
+            <!-- Test-Time Optimization vs Contextual Adaptation -->
+            <h3>Adaptation Paradigm Comparison</h3>
+            <div class="paradigm-comparison-grid">
+              <div class="paradigm-card">
+                <div class="paradigm-icon">⚙️</div>
+                <h4>Optimization-Based Test-Time Adaptation (e.g. HRM / TRM)</h4>
+                <p class="paradigm-path">
+                  Demonstrations $\to$ Task Loss $\to$ Backward Pass $\to$ Parameter / Embedding Updates $\Delta W$ $\to$ Prediction
+                </p>
+                <ul class="paradigm-points">
+                  <li><strong>Mechanism:</strong> Modifies actual model weights or task-specific identity embeddings at evaluation time via gradient optimization.</li>
+                  <li><strong>Compute Profile:</strong> Requires backpropagation and gradient descent per test instance; high latency and compute overhead.</li>
+                  <li><strong>Trade-off:</strong> High task-specific expressivity, but prone to overfitting on sparse examples and computationally expensive.</li>
+                </ul>
+              </div>
+
+              <div class="paradigm-card highlight-card">
+                <div class="paradigm-icon">🧠</div>
+                <h4>Contextual / Recurrent Adaptation (Illustrated by BDH-CQ)</h4>
+                <p class="paradigm-path">
+                  Demonstrations $\to$ Recurrent State Accumulation $S_{t+1} = f(S_t, x_t, y_t)$ $\to$ Latent Readout $\to$ Prediction
+                </p>
+                <ul class="paradigm-points">
+                  <li><strong>Mechanism:</strong> Model weights remain strictly frozen ($W_{\text{fixed}}$); task rules reside entirely in transient associative state.</li>
+                  <li><strong>Compute Profile:</strong> Purely forward inference pass; orders of magnitude cheaper ($0.0007 per task) with rapid latency.</li>
+                  <li><strong>Trade-off:</strong> Bounded memory capacity; rule induction fidelity depends entirely on context-state binding dynamics.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Connection to Public vs Fresh Generalization -->
+            <h3>Why ARC & Fresh Generalization Are Critical Here</h3>
+            <p>
+              ARC is an ideal testbed for recurrent contextual adaptation because each problem provides only 2 to 5 sparse demonstrations. The solver cannot rely on statistical memorization; it must bind and execute an unseen transformation solely through in-context dynamics.
+            </p>
+            <div class="generalization-bridge-box">
+              <h4>Connection to Our Central Claim</h4>
+              <p>
+                Whether a recurrent reasoning system succeeds on a familiar public task and whether it can infer an arbitrary rule from an unseen task are related but distinct questions.
+              </p>
+              <blockquote class="central-claim-quote">
+                "A model's performance on a public ARC benchmark can differ from its performance on novel tasks matched on observable benchmark properties; therefore, public benchmark accuracy alone cannot establish generalization."
+              </blockquote>
+              <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;">
+                Evaluating models like BDH-CQ on distribution-matched fresh tasks generated by <code>arc-task-gen</code> ensures that high few-shot scores reflect true contextual rule induction rather than implicit benchmark familiarity.
+              </p>
+            </div>
+
+            <div class="caution-box" role="note">
+              <strong>Scientific Scope:</strong> Fresh-task evaluation provides a diagnostic instrument. While BDH-CQ's recurrent associative state is conceptually distinct from parametric memorization, benchmark accuracy alone cannot completely rule out inductive distribution bias.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: METHODOLOGY & LIMITATIONS -->
+    <section id="methodology" class="section section-dark">
+      <div class="section-inner">
+        <span class="section-tag">RIGOR</span>
+        <h2 class="section-title">Methodology & Limitations</h2>
+
+        <div class="method-grid">
+          <div class="method-card">
+            <h3>What this experiment can show</h3>
+            <ul>
+              <li>Whether a solver's accuracy differs between public and fresh tasks</li>
+              <li>Which task properties correlate with failure</li>
+              <li>Whether distribution matching produces comparable task sets</li>
+              <li>The magnitude of any public-to-fresh performance gap</li>
+            </ul>
+          </div>
+          <div class="method-card method-card-warn">
+            <h3>What this experiment cannot prove</h3>
+            <ul>
+              <li>That a model has memorized specific ARC tasks</li>
+              <li>That generated tasks are perfectly equivalent to public ones</li>
+              <li>That all generated tasks are unambiguously solvable</li>
+              <li>That the gap is entirely due to a single cause</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="limitations">
+          <h3 class="sub-heading">Known Limitations</h3>
+          <div class="limit-list">
+            <div class="limit-item">
+              <strong>Generated task solvability</strong>
+              <p>Structural validation does not guarantee that a generated task has an unambiguous, human-inferable rule. A blind human audit addresses this partially but not completely.</p>
+            </div>
+            <div class="limit-item">
+              <strong>Distribution matching is partial</strong>
+              <p>Tasks are matched on measurable properties (grid size, colors, pair count) but may differ in unmeasured ways (cognitive complexity, rule novelty, visual salience).</p>
+            </div>
+            <div class="limit-item">
+              <strong>Generator artifacts</strong>
+              <p>LLM-generated tasks may have systematic biases: preference for certain transformation types, difficulty levels, or grid patterns.</p>
+            </div>
+            <div class="limit-item">
+              <strong>Small sample sizes</strong>
+              <p>With small generated sets, confidence intervals are wide and results should be interpreted as exploratory, not definitive.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explain-back -->
+        <div class="explain-back" id="explain-back">
+          <h3 class="sub-heading">Check your understanding</h3>
+          <div class="quiz-question">
+            <p><strong>If a solver scores 30% on public ARC tasks and 20% on fresh tasks, what can we conclude?</strong></p>
+            <div class="quiz-options">
+              <button class="quiz-opt" data-correct="false" onclick="checkQuiz(this)">The model has memorized 10% of public tasks</button>
+              <button class="quiz-opt" data-correct="true" onclick="checkQuiz(this)">There is a 10-point gap that is consistent with benchmark familiarity among other explanations</button>
+              <button class="quiz-opt" data-correct="false" onclick="checkQuiz(this)">The fresh tasks are harder</button>
+              <button class="quiz-opt" data-correct="false" onclick="checkQuiz(this)">The benchmark is invalid</button>
+            </div>
+            <div class="quiz-feedback" id="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 8: PRIMARY LITERATURE & BIBLIOGRAPHY -->
+    <section id="references" class="section">
+      <div class="section-inner">
+        <span class="section-tag">PRIMARY SOURCES & BIBLIOGRAPHY</span>
+        <h2 class="section-title">Peer-Reviewed & Foundational Literature</h2>
+        <p class="section-desc">
+          Key published research (2019–2026) informing benchmark contamination, test-time adaptation, and sparse ARC reasoning:
+        </p>
+
+        <div class="method-grid">
+          <div class="method-card">
+            <h3>1. Benchmark Contamination & Generalization</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+              <strong>Bordes et al. (2024)</strong> — <em>An In-Depth Look at Gemini's ARC-AGI Capabilities and Contamination</em> (arXiv:2407.00645).
+            </p>
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+              Analyzes how public ARC test data in web crawl corpora inflates few-shot evaluations, demonstrating the necessity of freshly generated, distribution-matched task sets for diagnostic isolation.
+            </p>
+            <span class="result-label" style="font-size:10px;margin-top:6px;display:inline-block;">RECENT PRIMARY PAPER (2024)</span>
+          </div>
+
+          <div class="method-card">
+            <h3>2. Recurrent Associative Latent Reasoning (BDH-CQ)</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+              <strong>Engdahl et al. (2026)</strong> — <em>BDH-CQ: Introducing In-Context Learning with Recurrent Latent Reasoning</em> (arXiv:2608.09888).
+            </p>
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+              Introduces the 150M parameter Dragon Hatchling (BDH-CQ) architecture combining continuous latent reasoning and recurrent associative state adaptation, reporting 29.5% pass@2 on public ARC-AGI-1 at $0.0007 per task without test-time backpropagation or parameter updates ($\nabla_W \mathcal{L} = 0$).
+            </p>
+            <span class="result-label" style="font-size:10px;margin-top:6px;display:inline-block;">RECENT PRIMARY PAPER (2026)</span>
+          </div>
+
+          <div class="method-card">
+            <h3>3. Test-Time Optimization vs. Contextual Inference</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+              <strong>Akyürek, Damani, Qiu, Guo, Kim, & Andreas (2024)</strong> — <em>The Surprising Effectiveness of Test-Time Training for Abstract Reasoning</em> (arXiv:2411.07279).
+            </p>
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+              Investigates test-time training (TTT) on ARC, serving as the empirical exemplar of optimization-based test-time parameter adaptation that contrasts with forward-pass non-parametric recurrent memory accumulation (as featured in BDH-CQ).
+            </p>
+            <span class="result-label" style="font-size:10px;margin-top:6px;display:inline-block;">RECENT PRIMARY PAPER (2024)</span>
+          </div>
+        </div>
+
+        <div class="caution-box" style="margin-top:16px;">
+          <strong>Evidence Labeling Audit:</strong> All numbers in this application are explicitly categorized as <code>PUBLISHED RESULT</code> (cited from literature/repositories), <code>MEASURED</code> (computed live by local solver), <code>DEMO DATA</code> (hand-crafted tutorial grids), or <code>TOY / DIDACTIC</code> (simplified educational mathematical abstraction).
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-col">
+          <h4>ARC Generalization Lab</h4>
+          <p>An interactive research laboratory investigating benchmark generalization. Built for DataForge 2026: Pathway Track.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Primary References</h4>
+          <ul>
+            <li><a href="https://arxiv.org/abs/2608.09888" target="_blank" rel="noopener">Engdahl et al. (2026) — BDH-CQ Latent Reasoning</a></li>
+            <li><a href="https://arxiv.org/abs/2407.00645" target="_blank" rel="noopener">Bordes et al. (2024) — ARC Contamination</a></li>
+            <li><a href="https://arxiv.org/abs/1911.01547" target="_blank" rel="noopener">Chollet (2019) — ARC-AGI Foundations</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Disclosures</h4>
+          <p>AI-assisted development. All claims verified against primary sources. See <a href="#methodology">methodology</a> and docs/ai-disclosure.md.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

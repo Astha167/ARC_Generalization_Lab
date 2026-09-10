@@ -1,0 +1,10 @@
+{
+  "name": "fresh_10",
+  "description": "Small-scale experiment: 10 public vs 10 fresh generated tasks.",
+  "dataset_public": "public",
+  "dataset_fresh": "generated",
+  "solver": "heuristic",
+  "max_tasks": 10,
+  "seed": 42,
+  "notes": "Requires: (1) Backend running (2) ARC-AGI-1 data downloaded (3) At least 10 generated tasks"
+}
