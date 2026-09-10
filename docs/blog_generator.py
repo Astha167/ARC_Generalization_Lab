@@ -387,7 +387,7 @@ def build_pdf():
 
     story.append(Spacer(1, 6))
     story.append(Paragraph(
-        "Live demonstration: https://frontend-fwohgombc-astha167s-projects.vercel.app/<br/>"
+        "Live demonstration: https://frontend-navy-gamma-81.vercel.app/<br/>"
         "Source code: https://github.com/Astha167/ARC_Generalization_Lab",
         ss["SmallRef"]))
 
