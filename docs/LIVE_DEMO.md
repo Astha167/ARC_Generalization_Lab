@@ -1,95 +1,71 @@
-# ARC Generalization Lab — 2-Minute Video Demo Script
+# ARC Generalization Lab — Simple & Natural Demo Script (~1:45)
 
-> **Tone:** Friendly, confident, and curious — like walking a colleague through an interactive paper.  
-> **Target Length:** 1:50 – 1:58 (allows natural pauses between clicks).  
-> **Total Spoken Word Count:** ~240 words (ideal speaking pace: ~130 words/minute).  
+> **Speaker Note:** Talk naturally, like you're showing a cool project to a friend on your laptop. Don't rush. Pause for half a second after each click.
 > **Live Demo URL:** `https://frontend-navy-gamma-81.vercel.app/`
 
 ---
 
-## 🎬 Video Overview & Timeline
+## ⏱️ 0:00 – 0:25 | The Big Question
 
-```
-0:00 ─── 0:25 ─── 0:50 ────────── 1:25 ────────── 1:55 ── 2:00
- Hook    Try &     Diagnostic Gap   BDH-CQ State   Wrap-up
- & ARC   Question  & Scientific     Recurrence     & URL
- Claim   (Step 1-2) Honesty (3-4)   Sandbox (Step 5)
-```
+- **What you're doing:** Open [ARC Generalization Lab](https://frontend-navy-gamma-81.vercel.app/). Move your mouse over the title, then click **`⚡ Start 60-Second Guided Journey`**.
+- **What to say:**
+  > "Hey everyone! Welcome to the ARC Generalization Lab.
+  > 
+  > Today, we're asking a simple question: when AI models score high on visual reasoning benchmarks like ARC, are they actually reasoning... or have they just seen the puzzles before on the internet?
+  > 
+  > That's what we built this lab to test. Let’s jump into our 60-second guided journey."
 
 ---
 
-## ⏱️ 0:00 – 0:25 | The Big Question: Reasoning or Memorization?
+## ⏱️ 0:25 – 0:45 | Step 1 & 2: How ARC Works & The Common Trap
 
-- **On Screen:** Start at `https://frontend-navy-gamma-81.vercel.app/`. Mouse hovers briefly over the hero question: *"Does an AI benchmark measure generalization—or familiarity?"* Then click the glowing **`⚡ Start 60-Second Guided Journey`** button.
-- **Spoken Script (Natural & Engaging):**
-  > "Public AI benchmarks like ARC-AGI have been floating around the web for years. Recent research by Bordes and others showed these tasks actually leaked into web-scale training data.
-  > 
-  > So when a model scores high on public ARC puzzles, is it genuinely reasoning... or just recalling familiar patterns?
-  > 
-  > We built the **ARC Generalization Lab** to test this live, comparing public tasks against freshly generated, distribution-matched tasks."
-
----
-
-## ⏱️ 0:25 – 0:50 | Step 1 & 2: Hands-On ARC & The Conceptual Trap
-
-- **On Screen:** 
-  1. In **Step 1**, click **`🤖 Run Heuristic Solver`**, then click **`👁️ Reveal Reference Output`**. 
+- **What you're doing:** 
+  1. In Step 1, click **`🤖 Run Heuristic Solver`**, then click **`👁️ Reveal Reference Output`**.
   2. Click **`Proceed to Step 2`**.
-  3. In **Step 2**, click **`NO`** (*"NO — Public accuracy alone cannot distinguish..."*).
-- **Spoken Script (Storytelling):**
-  > "In Step 1, we see what makes ARC unique: inducing a visual rule from just a few examples. Here, our heuristic solver predicts the grid, and we can inspect the exact diff against ground truth.
+  3. Under Step 2, click the **`NO`** button.
+- **What to say:**
+  > "In Step 1, we see how ARC works: you look at a couple of grid examples, figure out the pattern, and solve the puzzle. Here, our solver predicts the answer, and we can compare it with the ground truth.
   > 
-  > But here's the trap in Step 2: if a model solves public puzzles, does that prove general intelligence?
+  > But in Step 2, here's the catch: if a model gets this right, does that prove general intelligence?
   > 
-  > We click **No**—because without testing on brand-new, unseen tasks, benchmark accuracy alone cannot prove generalization."
+  > We click **No**—because these puzzles have been public for years. A high score might just be memorization."
 
 ---
 
-## ⏱️ 0:50 – 1:25 | Step 3 & 4: Live Diagnostic & Scientific Honesty
+## ⏱️ 0:45 – 1:15 | Step 3 & 4: The Live Test & Why Nuance Matters
 
-- **On Screen:** 
-  1. Advance to **Step 3**, click **`▶ Run Diagnostic Comparison`**. 
-  2. Point cursor at the **Public Score**, **Fresh Score**, the **Diagnostic Gap**, and the **95% Wilson Confidence Interval**.
-  3. Click **`Proceed to Step 4`**, then click **Option C** (the nuanced explanation).
-- **Spoken Script (Clear & Thoughtful):**
-  > "In Step 3, we run the exact same solver across both public tasks and newly synthesized, distribution-matched tasks from the arc-task-gen pipeline. Notice the 95% Wilson confidence interval right here on the gap.
+- **What you're doing:** 
+  1. Click **`Proceed to Step 3`**, then click **`▶ Run Diagnostic Comparison`**. 
+  2. Point at the two scores and the performance gap.
+  3. Click **`Proceed to Step 4`**, then click **Option C**.
+- **What to say:**
+  > "So in Step 3, we run a real test. We take the exact same solver and test it on public puzzles versus freshly generated puzzles that were never on the internet.
   > 
-  > But here's our core scientific claim: **a performance gap does NOT prove memorization.**
+  > Notice the drop in performance—that's our diagnostic gap!
   > 
-  > As we show in Step 4, a gap is a diagnostic signal. It could be benchmark familiarity, but it could also come from generator artifacts, task ambiguity, or solver limitations."
+  > But here's the key lesson in Step 4: **a gap does NOT automatically prove the AI cheated or memorized.** The fresh puzzles might just be harder, or the generator might have small differences. It’s a diagnostic clue, not instant proof."
 
 ---
 
-## ⏱️ 1:25 – 1:55 | Step 5 & BDH-CQ: Test-Time Adaptation Without Backprop
+## ⏱️ 1:15 – 1:45 | Step 5: Learning Without Retraining (BDH-CQ)
 
-- **On Screen:** 
+- **What you're doing:** 
   1. Click **`Proceed to Step 5`**, then click **`🔬 Inspect & Manipulate BDH-CQ Recurrent State ↓`**.
-  2. In the interactive sandbox:
-     - Change the **Pattern** dropdown.
-     - Move the **Retention Rate $\alpha$** slider slightly.
-     - Point cursor at the **$\nabla_W \mathcal{L} = 0$** badge and the **$4 \times 4$ State Heatmap**.
-- **Spoken Script (Excited & Focused):**
-  > "So how should a model adapt to brand-new tasks? 
+  2. In the sandbox:
+     - Pick a different **Pattern** from the dropdown.
+     - Drag the **Retention Rate** slider slightly.
+     - Point at the **$4 \times 4$ heatmap** changing live.
+- **What to say:**
+  > "Finally, how can models learn new rules on the fly without retraining?
   > 
-  > Systems like TTT and HRM run gradient descent at test time, updating weights. But **BDH-CQ** keeps all weights permanently frozen—zero parameter updates—adapting entirely through forward-pass recurrent state accumulation.
+  > Most approaches update their neural weights with gradient descent. But **BDH-CQ** takes an exciting path: it keeps all weights completely frozen, and adapts entirely through a fast recurrent memory.
   > 
-  > In this live interactive substrate, you can watch that happen: as we adjust the retention rate $\alpha$ or feed new demonstrations, the associative state matrix $S_t$ updates in real time, sharpening the readout without touching a single weight."
+  > In this interactive sandbox, you can see it live. As I change the pattern or adjust the memory slider, the state matrix updates instantly—learning the rule in real time without retraining."
 
 ---
 
-## ⏱️ 1:55 – 2:00 | Clean Wrap-Up
+## ⏱️ 1:45 – 1:55 | Wrap-Up
 
-- **On Screen:** Scroll smoothly to the top navbar or the references section at the bottom.
-- **Spoken Script (Punchy finish):**
-  > "Ground truth beside estimate, reproducible in 60 seconds, and completely open source. Try it yourself at the link below. Thanks for watching!"
-
----
-
-## 🎙️ Speaker Pro-Tips
-
-| Tip | Why it helps |
-|---|---|
-| **Pause for 0.5s when clicking** | Lets the viewer see the button press before hearing the result. |
-| **Pronounce "BDH-CQ" as letters** | Say *"B-D-H C-Q"* cleanly and deliberately. |
-| **Stress key terms** | Emphasize *familiarity*, *diagnostic signal*, *does not prove memorization*, and *zero gradient updates*. |
-| **Keep mouse movement smooth** | Avoid circling or shaking the mouse erratically; move smoothly between panels. |
+- **What you're doing:** Scroll back up to the top navbar.
+- **What to say:**
+  > "That's our project: an interactive, honest lab testing how AI really reasons outside its training data. Try the live link below. Thanks for watching!"
