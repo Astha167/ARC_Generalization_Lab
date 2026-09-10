@@ -34,27 +34,27 @@ def build_styles():
 
     ss.add(ParagraphStyle(
         "DocTitle", parent=ss["Title"],
-        fontSize=15, leading=18, spaceAfter=2,
+        fontSize=14, leading=16, spaceAfter=1,
         textColor=DARK, alignment=TA_CENTER,
     ))
     ss.add(ParagraphStyle(
         "Subtitle", parent=ss["Normal"],
-        fontSize=9, leading=11, spaceAfter=6,
+        fontSize=8.5, leading=10, spaceAfter=4,
         textColor=MUTED, alignment=TA_CENTER,
     ))
     ss.add(ParagraphStyle(
         "SectionHead", parent=ss["Heading2"],
-        fontSize=10.5, leading=13, spaceBefore=8, spaceAfter=3,
+        fontSize=10, leading=12, spaceBefore=5, spaceAfter=2,
         textColor=DARK, fontName="Helvetica-Bold",
     ))
     ss.add(ParagraphStyle(
         "Body", parent=ss["Normal"],
-        fontSize=9, leading=12, spaceAfter=4,
+        fontSize=8.5, leading=11, spaceAfter=3,
         alignment=TA_JUSTIFY, fontName="Helvetica",
     ))
     ss.add(ParagraphStyle(
         "BodyBold", parent=ss["Normal"],
-        fontSize=9, leading=12, spaceAfter=4,
+        fontSize=8.5, leading=11, spaceAfter=3,
         alignment=TA_JUSTIFY, fontName="Helvetica-Bold",
     ))
     ss.add(ParagraphStyle(
@@ -78,8 +78,8 @@ def build_pdf():
     doc = SimpleDocTemplate(
         OUTPUT_PATH,
         pagesize=A4,
-        leftMargin=18*mm, rightMargin=18*mm,
-        topMargin=14*mm, bottomMargin=14*mm,
+        leftMargin=15*mm, rightMargin=15*mm,
+        topMargin=10*mm, bottomMargin=10*mm,
     )
 
     ss = build_styles()
@@ -90,7 +90,7 @@ def build_pdf():
         "ARC Generalization Lab — One-Page Concept Summary", ss["DocTitle"]))
     story.append(Paragraph(
         "DataForge 2026: Pathway Track  |  September 2026", ss["Subtitle"]))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER, spaceAfter=4))
 
     # 1. CENTRAL CLAIM
     story.append(Paragraph("1. Central Claim", ss["SectionHead"]))
@@ -108,8 +108,8 @@ def build_pdf():
     story.append(Paragraph(
         "Bordes et al. (2024) demonstrated empirically that ARC-AGI-1 evaluation tasks appear verbatim in Common Crawl "
         "and The Pile. Any model pre-trained on these corpora may score higher than its genuine rule-induction ability "
-        "warrants. Without a fresh, distribution-matched control set, benchmark scores conflate prior familiarity with "
-        "general reasoning. This is the benchmark integrity problem our lab addresses.",
+        "warrants. Without a fresh, distribution-matched control set, static benchmark scores conflate prior familiarity "
+        "with general reasoning capability.",
         ss["Body"]))
 
     # 3. COMPETITIVE CONTEXT & ARCHITECTURAL COMPARISON
@@ -146,13 +146,13 @@ def build_pdf():
         ("GRID", (0, 0), (-1, -1), 0.4, BORDER),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#f8f9fa"), HexColor("#ffffff")]),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 3),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
     ]))
     story.append(t)
-    story.append(Spacer(1, 4))
+    story.append(Spacer(1, 2))
 
     # 4. MECHANISM
     story.append(Paragraph("4. Mechanism: Optimization vs. Contextual Adaptation", ss["SectionHead"]))
@@ -196,8 +196,13 @@ def build_pdf():
         "or <b>TOY / DIDACTIC</b> (simplified educational model). No result is presented without provenance.",
         ss["Body"]))
 
-    # 8. REFERENCES
-    story.append(Paragraph("8. Primary References", ss["SectionHead"]))
+    # 8. REFERENCES & NEXT STEPS
+    story.append(Paragraph("8. Where to Learn More & Primary References", ss["SectionHead"]))
+    story.append(Paragraph(
+        "<b>Next Steps:</b> Explore the live interactive artifact at <u>famous-sable-446bd6.netlify.app</u> "
+        "to run the 60-second diagnostic journey, inspect task-generation code in our repository "
+        "(github.com/Astha167/ARC_Generalization_Lab), and consult primary sources:",
+        ss["SmallNote"]))
     refs = [
         "Engdahl et al. (2026). <i>BDH-CQ: Introducing In-Context Learning with Recurrent Latent Reasoning.</i> arXiv:2608.09888.",
         "Bordes et al. (2024). <i>An In-Depth Look at Gemini's ARC-AGI Capabilities and Contamination.</i> arXiv:2407.00645.",
@@ -207,17 +212,38 @@ def build_pdf():
     for r in refs:
         story.append(Paragraph(f"• {r}", ss["SmallNote"]))
 
-    doc.build(story)
-    print(f"Concept summary PDF generated: {OUTPUT_PATH}")
-    # Count approximate words
+    # Count words before doc.build consumes the story list
     import re
     text_parts = []
     for item in story:
-        if hasattr(item, 'text'):
+        if isinstance(item, Paragraph):
             clean = re.sub(r'<[^>]+>', '', item.text)
             text_parts.append(clean)
-    word_count = len(' '.join(text_parts).split())
-    print(f"   Approximate word count: {word_count}")
+        elif isinstance(item, Table):
+            for row in item._cellvalues:
+                for cell in row:
+                    if isinstance(cell, Paragraph):
+                        text_parts.append(re.sub(r'<[^>]+>', '', cell.text))
+                    elif isinstance(cell, str):
+                        text_parts.append(cell)
+    all_text = ' '.join(text_parts)
+    word_count = len(all_text.split())
+
+    from reportlab.pdfgen import canvas
+    class PageCounter(canvas.Canvas):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.count = 0
+        def showPage(self):
+            self.count += 1
+            super().showPage()
+        def save(self):
+            print(f"   Exact page count: {self.count} (Target: 1 page)")
+            super().save()
+
+    doc.build(story, canvasmaker=PageCounter)
+    print(f"Concept summary PDF generated: {OUTPUT_PATH}")
+    print(f"   Approximate word count: {word_count} words (PS recommended: 500-950)")
 
 
 if __name__ == "__main__":

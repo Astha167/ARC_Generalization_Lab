@@ -24,6 +24,7 @@ venv/
 experiments/results/
 experiments/analysis/
 
-# IDE
+# IDE & Scratch
 .vscode/
 .idea/
+scratch/

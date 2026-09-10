@@ -119,7 +119,7 @@ const EMBEDDED_DEMO_TASKS = {
   },
 };
 
-// Simple heuristic solver (client-side fallback)
+// Heuristic solver (client-side fallback) — matches backend solver families
 function clientSolve(task, solverType) {
   const testInput = task.test[0].input;
   const rows = testInput.length;
@@ -127,12 +127,6 @@ function clientSolve(task, solverType) {
 
   if (solverType === 'random') {
     const colors = new Set();
-    task.train.forEach(p => {
-      [...p.input, ...p.output].forEach(grid => {
-        if (Array.isArray(grid)) grid.forEach(row => row.forEach(v => colors.add(v)));
-        else if (Array.isArray(p.input)) p.input.forEach(row => row.forEach(v => colors.add(v)));
-      });
-    });
     task.train.forEach(p => {
       p.input.forEach(r => r.forEach(v => colors.add(v)));
       p.output.forEach(r => r.forEach(v => colors.add(v)));
@@ -143,29 +137,223 @@ function clientSolve(task, solverType) {
     );
   }
 
-  // Heuristic: try simple transforms
-  const transforms = [
-    { name: 'identity', fn: g => g.map(r => [...r]) },
-    { name: 'h_flip', fn: g => g.map(r => [...r].reverse()) },
-    { name: 'v_flip', fn: g => [...g].reverse().map(r => [...r]) },
-    { name: 'rotate_180', fn: g => [...g].reverse().map(r => [...r].reverse()) },
-  ];
+  // --- Helper functions ---
+  const gridEq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const copyGrid = g => g.map(r => [...r]);
 
-  for (const { fn } of transforms) {
-    let allMatch = true;
-    for (const pair of task.train) {
-      try {
-        const result = fn(pair.input);
-        if (JSON.stringify(result) !== JSON.stringify(pair.output)) {
-          allMatch = false;
-          break;
-        }
-      } catch {
-        allMatch = false;
-        break;
+  const rotate90 = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    return Array.from({ length: C }, (_, c) => Array.from({ length: R }, (_, r) => g[R - 1 - r][c]));
+  };
+  const rotate270 = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    return Array.from({ length: C }, (_, c) => Array.from({ length: R }, (_, r) => g[r][C - 1 - c]));
+  };
+  const transpose = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    return Array.from({ length: C }, (_, c) => Array.from({ length: R }, (_, r) => g[r][c]));
+  };
+
+  // Colour remapping helpers
+  const buildColorMap = (inp, out) => {
+    if (inp.length !== out.length) return null;
+    const map = {};
+    for (let r = 0; r < inp.length; r++) {
+      if (inp[r].length !== out[r].length) return null;
+      for (let c = 0; c < inp[r].length; c++) {
+        const s = inp[r][c], d = out[r][c];
+        if (s in map) { if (map[s] !== d) return null; }
+        else map[s] = d;
       }
     }
-    if (allMatch) return fn(testInput);
+    return map;
+  };
+  const applyColorMap = (g, m) => g.map(r => r.map(v => (v in m ? m[v] : v)));
+
+  // Tiling helper
+  const tryTile = (inp, out) => {
+    const ir = inp.length, ic = inp[0]?.length || 0;
+    const orr = out.length, oc = out[0]?.length || 0;
+    if (!ir || !ic || !orr || !oc || orr % ir || oc % ic) return null;
+    const kr = orr / ir, kc = oc / ic;
+    if (kr === 1 && kc === 1) return null;
+    for (let r = 0; r < orr; r++)
+      for (let c = 0; c < oc; c++)
+        if (out[r][c] !== inp[r % ir][c % ic]) return null;
+    return [kr, kc];
+  };
+  const applyTile = (g, kr, kc) => {
+    const R = g.length, C = g[0]?.length || 0;
+    return Array.from({ length: R * kr }, (_, r) =>
+      Array.from({ length: C * kc }, (_, c) => g[r % R][c % C])
+    );
+  };
+
+  // Border extraction
+  const extractBorder = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    if (R <= 2 || C <= 2) return copyGrid(g);
+    return g.map((row, r) => row.map((v, c) =>
+      (r === 0 || r === R - 1 || c === 0 || c === C - 1) ? v : 0
+    ));
+  };
+
+  // Cross-fill from single non-zero cell
+  const fillCross = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    let color = null, pr = -1, pc = -1, count = 0;
+    for (let r = 0; r < R; r++)
+      for (let c = 0; c < C; c++)
+        if (g[r][c] !== 0) { color = g[r][c]; pr = r; pc = c; count++; }
+    if (count !== 1) return null;
+    const res = copyGrid(g);
+    for (let r = 0; r < R; r++) res[r][pc] = color;
+    for (let c = 0; c < C; c++) res[pr][c] = color;
+    return res;
+  };
+
+  // Gravity down
+  const gravityDown = g => {
+    const R = g.length, C = g[0]?.length || 0;
+    const res = Array.from({ length: R }, () => Array(C).fill(0));
+    for (let c = 0; c < C; c++) {
+      const vals = [];
+      for (let r = 0; r < R; r++) if (g[r][c] !== 0) vals.push(g[r][c]);
+      const start = R - vals.length;
+      vals.forEach((v, i) => { res[start + i][c] = v; });
+    }
+    return res;
+  };
+
+  // Gravity left
+  const gravityLeft = g => g.map(row => {
+    const vals = row.filter(v => v !== 0);
+    return [...vals, ...Array(row.length - vals.length).fill(0)];
+  });
+
+  // Upscale 2x
+  const upscale2x = g => {
+    const res = [];
+    for (const row of g) {
+      const nr = [];
+      for (const v of row) { nr.push(v, v); }
+      res.push([...nr], [...nr]);
+    }
+    return res;
+  };
+
+  // Check transform against all training pairs
+  const checkTransform = (train, fn) => {
+    for (const pair of train) {
+      try { if (!gridEq(fn(pair.input), pair.output)) return false; }
+      catch { return false; }
+    }
+    return true;
+  };
+
+  // Phase 1: geometric transforms
+  const geoTransforms = [
+    g => copyGrid(g),                                    // identity
+    g => g.map(r => [...r].reverse()),                   // h_flip
+    g => [...g].reverse().map(r => [...r]),               // v_flip
+    rotate90,
+    g => [...g].reverse().map(r => [...r].reverse()),    // rotate_180
+    rotate270,
+    transpose,
+  ];
+
+  for (const fn of geoTransforms) {
+    if (checkTransform(task.train, fn)) return fn(testInput);
+  }
+
+  // Phase 2: colour remapping
+  const tryColorRemap = () => {
+    const globalMap = {};
+    for (const pair of task.train) {
+      const m = buildColorMap(pair.input, pair.output);
+      if (!m) return null;
+      for (const [s, d] of Object.entries(m)) {
+        if (s in globalMap) { if (globalMap[s] !== d) return null; }
+        else globalMap[s] = d;
+      }
+    }
+    for (const pair of task.train) {
+      if (!gridEq(applyColorMap(pair.input, globalMap), pair.output)) return null;
+    }
+    const testColors = new Set(testInput.flat().filter(v => v !== 0));
+    for (const c of testColors) {
+      if (!(c in globalMap)) return null;
+    }
+    return applyColorMap(testInput, globalMap);
+  };
+  const colorResult = tryColorRemap();
+  if (colorResult) return colorResult;
+
+  // Phase 3: tiling
+  const tryTiling = () => {
+    const factors = new Set();
+    for (const pair of task.train) {
+      const f = tryTile(pair.input, pair.output);
+      if (!f) return null;
+      factors.add(f.join(','));
+    }
+    if (factors.size !== 1) return null;
+    const [kr, kc] = [...factors][0].split(',').map(Number);
+    for (const pair of task.train) {
+      if (!gridEq(applyTile(pair.input, kr, kc), pair.output)) return null;
+    }
+    return applyTile(testInput, kr, kc);
+  };
+  const tileResult = tryTiling();
+  if (tileResult) return tileResult;
+
+  // Phase 4: structural transforms
+  const structTransforms = [
+    extractBorder,
+    gravityDown,
+    gravityLeft,
+    upscale2x,
+    g => fillCross(g) || copyGrid(g),
+  ];
+  for (const fn of structTransforms) {
+    if (checkTransform(task.train, fn)) return fn(testInput);
+  }
+
+  // Phase 5: combined geometric + colour remap
+  for (let gi = 1; gi < geoTransforms.length; gi++) {
+    const geoFn = geoTransforms[gi];
+    const gMap = {};
+    let valid = true;
+    for (const pair of task.train) {
+      try {
+        const transformed = geoFn(pair.input);
+        const m = buildColorMap(transformed, pair.output);
+        if (!m) { valid = false; break; }
+        for (const [s, d] of Object.entries(m)) {
+          if (s in gMap) { if (gMap[s] !== d) { valid = false; break; } }
+          else gMap[s] = d;
+        }
+        if (!valid) break;
+      } catch { valid = false; break; }
+    }
+    if (!valid) continue;
+    let allOk = true;
+    for (const pair of task.train) {
+      try {
+        if (!gridEq(applyColorMap(geoFn(pair.input), gMap), pair.output)) { allOk = false; break; }
+      } catch { allOk = false; break; }
+    }
+    if (allOk) {
+      try {
+        const transTest = geoFn(testInput);
+        const tColors = new Set(transTest.flat().filter(v => v !== 0));
+        let covered = true;
+        for (const c of tColors) {
+          if (!(c in gMap)) { covered = false; break; }
+        }
+        if (covered) return applyColorMap(transTest, gMap);
+      } catch { continue; }
+    }
   }
 
   // Fallback: copy input
@@ -296,6 +484,9 @@ function renderPalette() {
 // ============================================================
 
 async function loadTasks() {
+  const label = document.getElementById('task-id-label');
+  if (label) label.innerHTML = '<span class="spinner"></span> Loading tasks...';
+
   if (state.currentDataset === 'demo') {
     // Use embedded data (works without backend)
     state.demoTasks = EMBEDDED_DEMO_TASKS;
@@ -319,8 +510,10 @@ async function loadCurrentTask() {
   const taskId = state.taskIds[state.taskIndex];
   if (!taskId) return;
 
-  document.getElementById('task-id-label').textContent =
-    `${state.taskIndex + 1}/${state.taskIds.length} — ${taskId}`;
+  const label = document.getElementById('task-id-label');
+  if (label) {
+    label.innerHTML = `<span class="spinner"></span> Loading ${taskId}...`;
+  }
 
   let task = null;
 
@@ -331,6 +524,10 @@ async function loadCurrentTask() {
     if (resp) {
       task = resp;
     }
+  }
+
+  if (label) {
+    label.textContent = `${state.taskIndex + 1}/${state.taskIds.length} — ${taskId}`;
   }
 
   if (!task) return;
@@ -448,25 +645,37 @@ window.submitPrediction = async function() {
   const taskId = state.currentTask.id;
   const dataset = state.currentDataset;
   const predicted = state.predictionGrid;
+  const submitBtn = document.getElementById('submit-btn');
 
-  let result;
-
-  // Try backend first
-  const resp = await apiFetch('/evaluate', {
-    method: 'POST',
-    body: JSON.stringify({ task_id: taskId, dataset, predicted }),
-  });
-
-  if (resp) {
-    result = resp;
-  } else {
-    // Client-side evaluation
-    const gt = state.currentTask.test?.[0]?.output;
-    if (!gt) return;
-    result = clientEvaluate(predicted, gt);
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Evaluating...';
   }
 
-  showResult(result, predicted);
+  let result;
+  try {
+    // Try backend first
+    const resp = await apiFetch('/evaluate', {
+      method: 'POST',
+      body: JSON.stringify({ task_id: taskId, dataset, predicted }),
+    });
+
+    if (resp) {
+      result = resp;
+    } else {
+      // Client-side evaluation
+      const gt = state.currentTask.test?.[0]?.output;
+      if (!gt) return;
+      result = clientEvaluate(predicted, gt);
+    }
+
+    showResult(result, predicted);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Submit Prediction';
+    }
+  }
 };
 
 function showResult(result, predicted) {
@@ -514,62 +723,63 @@ window.runSolver = async function() {
   const btn = document.getElementById('run-solver-btn');
 
   btn.disabled = true;
-  btn.textContent = 'Running...';
+  btn.innerHTML = '<span class="spinner"></span> Running...';
 
   let result;
+  try {
+    const resp = await apiFetch('/solver/run', {
+      method: 'POST',
+      body: JSON.stringify({ task_id: taskId, dataset, solver: solverType }),
+    });
 
-  const resp = await apiFetch('/solver/run', {
-    method: 'POST',
-    body: JSON.stringify({ task_id: taskId, dataset, solver: solverType }),
-  });
+    if (resp) {
+      result = resp;
+    } else {
+      // Client-side solver
+      const predicted = clientSolve(state.currentTask, solverType);
+      const gt = state.currentTask.test?.[0]?.output;
+      if (!gt) return;
+      const evaluation = clientEvaluate(predicted, gt);
+      result = {
+        solver: { name: solverType === 'random' ? 'Random Baseline' : 'Heuristic Baseline', type: solverType },
+        predicted,
+        ground_truth: gt,
+        evaluation,
+        elapsed_ms: 0,
+      };
+    }
 
-  if (resp) {
-    result = resp;
-  } else {
-    // Client-side solver
-    const predicted = clientSolve(state.currentTask, solverType);
-    const gt = state.currentTask.test?.[0]?.output;
-    if (!gt) { btn.disabled = false; btn.textContent = 'Run Solver'; return; }
-    const evaluation = clientEvaluate(predicted, gt);
-    result = {
-      solver: { name: solverType === 'random' ? 'Random Baseline' : 'Heuristic Baseline', type: solverType },
-      predicted,
-      ground_truth: gt,
-      evaluation,
-      elapsed_ms: 0,
-    };
+    const container = document.getElementById('solver-result');
+    container.classList.remove('hidden');
+
+    const evalR = result.evaluation;
+    const icon = evalR.exact_match ? '✓' : '✗';
+    const color = evalR.exact_match ? 'var(--success)' : 'var(--error)';
+
+    container.innerHTML = `
+      <h4 style="margin-bottom:12px;">${result.solver.name}</h4>
+      <p style="color:${color};font-weight:700;margin-bottom:12px;">
+        ${icon} ${evalR.exact_match ? 'SOLVED' : 'FAILED'} — Cell accuracy: ${(evalR.cell_accuracy * 100).toFixed(1)}%
+      </p>
+      <div class="result-grids" style="margin-bottom:12px;">
+        <div class="grid-panel">
+          <span class="panel-label">Solver Prediction</span>
+          <div class="arc-grid-container" id="solver-pred-grid"></div>
+        </div>
+        <div class="grid-panel">
+          <span class="panel-label">Ground Truth</span>
+          <div class="arc-grid-container" id="solver-gt-grid"></div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);">${result.solver.description || ''}</p>
+    `;
+
+    renderGrid(document.getElementById('solver-pred-grid'), result.predicted);
+    renderGrid(document.getElementById('solver-gt-grid'), result.ground_truth);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Run Solver';
   }
-
-  btn.disabled = false;
-  btn.textContent = 'Run Solver';
-
-  const container = document.getElementById('solver-result');
-  container.classList.remove('hidden');
-
-  const evalR = result.evaluation;
-  const icon = evalR.exact_match ? '✓' : '✗';
-  const color = evalR.exact_match ? 'var(--success)' : 'var(--error)';
-
-  container.innerHTML = `
-    <h4 style="margin-bottom:12px;">${result.solver.name}</h4>
-    <p style="color:${color};font-weight:700;margin-bottom:12px;">
-      ${icon} ${evalR.exact_match ? 'SOLVED' : 'FAILED'} — Cell accuracy: ${(evalR.cell_accuracy * 100).toFixed(1)}%
-    </p>
-    <div class="result-grids" style="margin-bottom:12px;">
-      <div class="grid-panel">
-        <span class="panel-label">Solver Prediction</span>
-        <div class="arc-grid-container" id="solver-pred-grid"></div>
-      </div>
-      <div class="grid-panel">
-        <span class="panel-label">Ground Truth</span>
-        <div class="arc-grid-container" id="solver-gt-grid"></div>
-      </div>
-    </div>
-    <p style="font-size:12px;color:var(--text-muted);">${result.solver.description || ''}</p>
-  `;
-
-  renderGrid(document.getElementById('solver-pred-grid'), result.predicted);
-  renderGrid(document.getElementById('solver-gt-grid'), result.ground_truth);
 };
 
 // ============================================================
@@ -659,10 +869,16 @@ function showExperimentRunResults(exp) {
     `;
   }
 
+  // Confidence interval display
+  const gapCI = exp.gap_confidence_interval_95;
+  const ciText = gapCI
+    ? `<br><span style="font-size:12px;color:var(--text-muted);">95% CI on gap: [${(gapCI.lower * 100).toFixed(1)}%, ${(gapCI.upper * 100).toFixed(1)}%] (Wilson score interval)</span>`
+    : '';
+
   document.getElementById('gap-summary').innerHTML = `
     ${warningBadge}
     ${exploratoryBadge}
-    <strong>Diagnostic Performance Gap: ${gap > 0 ? '+' : ''}${gap.toFixed(1)} percentage points</strong><br>
+    <strong>Diagnostic Performance Gap: ${gap > 0 ? '+' : ''}${gap.toFixed(1)} percentage points</strong>${ciText}<br>
     <span style="color:var(--text-secondary);font-size:13px;">
       ${exp.public.evaluated_tasks_label} vs ${exp.fresh.evaluated_tasks_label} (Solver: ${exp.solver.name})<br>
       ${exp.gap_interpretation}
@@ -684,6 +900,7 @@ function showExperimentRunResults(exp) {
     ['Tasks evaluated', exp.public.task_count, exp.fresh.task_count],
     ['Tasks solved', exp.public.solved, exp.fresh.solved],
     ['Mean accuracy', `${pAcc.toFixed(1)}%`, `${fAcc.toFixed(1)}%`],
+    ['95% CI', exp.public.confidence_interval_95 ? `[${(exp.public.confidence_interval_95.lower*100).toFixed(1)}%, ${(exp.public.confidence_interval_95.upper*100).toFixed(1)}%]` : '—', exp.fresh.confidence_interval_95 ? `[${(exp.fresh.confidence_interval_95.lower*100).toFixed(1)}%, ${(exp.fresh.confidence_interval_95.upper*100).toFixed(1)}%]` : '—'],
     ['Diagnostic Gap', '—', '—', `${(gap).toFixed(1)}%`],
   ];
 
@@ -738,6 +955,20 @@ function runClientBatch(tasks, solverType, maxTasks, dataset, filterIds = null) 
   };
 }
 
+// Wilson score confidence interval (client-side)
+function wilsonInterval(successes, total, z = 1.96) {
+  if (total === 0) return { lower: 0, upper: 0, center: 0 };
+  const p = successes / total;
+  const denom = 1 + z * z / total;
+  const centre = (p + z * z / (2 * total)) / denom;
+  const margin = z * Math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denom;
+  return {
+    lower: Math.max(0, centre - margin),
+    upper: Math.min(1, centre + margin),
+    center: centre,
+  };
+}
+
 function showExperimentResults(publicResult, freshResult) {
   const container = document.getElementById('experiment-results');
   container.classList.remove('hidden');
@@ -746,16 +977,23 @@ function showExperimentResults(publicResult, freshResult) {
   const fAcc = (freshResult.accuracy * 100);
   const gap = pAcc - fAcc;
 
+  // Compute Wilson CIs
+  const pubCI = wilsonInterval(publicResult.solved, publicResult.total_tasks);
+  const freshCI = wilsonInterval(freshResult.solved, freshResult.total_tasks);
+  const gapCILower = (pubCI.lower - freshCI.upper) * 100;
+  const gapCIUpper = (pubCI.upper - freshCI.lower) * 100;
+
   // Gap bars
   document.getElementById('exp-public-score').textContent = `${pAcc.toFixed(1)}%`;
   document.getElementById('exp-fresh-score').textContent = `${fAcc.toFixed(1)}%`;
   document.getElementById('exp-public-bar').style.width = `${Math.max(2, pAcc)}%`;
   document.getElementById('exp-fresh-bar').style.width = `${Math.max(2, fAcc)}%`;
 
-  // Gap summary
+  // Gap summary with CI
   const gapDir = gap > 0 ? 'higher' : gap < 0 ? 'lower' : 'equal';
   document.getElementById('gap-summary').innerHTML = `
-    <strong>Public-to-Fresh Gap: ${gap > 0 ? '+' : ''}${gap.toFixed(1)} percentage points</strong><br>
+    <strong>Public-to-Fresh Gap: ${gap > 0 ? '+' : ''}${gap.toFixed(1)} percentage points</strong>
+    <br><span style="font-size:12px;color:var(--text-muted);">95% CI on gap: [${gapCILower.toFixed(1)}%, ${gapCIUpper.toFixed(1)}%] (Wilson score interval)</span><br>
     <span style="color:var(--text-secondary);">
       Public performance is ${gapDir} than fresh performance.
       ${Math.abs(gap) > 5
@@ -1691,6 +1929,38 @@ async function init() {
 
   // Initialize Step 1 of 60-second journey
   renderJourneyStep1();
+
+  // Auto-run preset experiment (PS: "Skip the blank canvas. Open with a preset already running.")
+  runPresetExperiment();
+}
+
+// Auto-run a pre-computed demo comparison so the experiment section is never empty on load
+function runPresetExperiment() {
+  const allTasks = EMBEDDED_DEMO_TASKS;
+  const ids = Object.keys(allTasks);
+  const halfLen = Math.max(2, Math.ceil(ids.length / 2));
+  const publicIds = ids.slice(0, halfLen);
+  const freshIds = ids.slice(halfLen);
+
+  const publicResult = runClientBatch(allTasks, 'heuristic', 5, 'demo', publicIds);
+  publicResult.dataset = 'public (demo preset)';
+  publicResult.label = 'DEMO DATA — PRESET COMPARISON (auto-loaded)';
+
+  const freshResult = runClientBatch(allTasks, 'heuristic', 5, 'demo', freshIds);
+  freshResult.dataset = 'fresh (demo preset)';
+  freshResult.label = 'DEMO DATA — PRESET COMPARISON (auto-loaded)';
+
+  showExperimentResults(publicResult, freshResult);
+
+  // Add a subtle preset indicator above the results
+  const container = document.getElementById('experiment-results');
+  if (container && !document.getElementById('preset-indicator')) {
+    const indicator = document.createElement('div');
+    indicator.id = 'preset-indicator';
+    indicator.style.cssText = 'background:rgba(74,144,217,0.08);border:1px solid rgba(74,144,217,0.2);padding:8px 14px;border-radius:6px;margin-bottom:12px;color:var(--text-accent);font-size:12px;text-align:center;';
+    indicator.innerHTML = '⚡ <strong>Preset comparison</strong> — auto-loaded using demo data to show the diagnostic methodology. Click <strong>▶ Run Experiment</strong> above to run your own.';
+    container.insertBefore(indicator, container.firstChild);
+  }
 }
 
 // Start

@@ -409,6 +409,31 @@ def run_experiment(req: ExperimentRequest):
     fresh_acc = sum(r["cell_accuracy"] for r in fresh_results) / max(1, len(fresh_results))
     gap = public_acc - fresh_acc
 
+    # --- Wilson score confidence intervals (95%) ---
+    import math
+
+    def wilson_interval(successes, total, z=1.96):
+        """Compute Wilson score confidence interval for a proportion."""
+        if total == 0:
+            return {"lower": 0.0, "upper": 0.0, "center": 0.0}
+        p_hat = successes / total
+        denom = 1 + z ** 2 / total
+        centre = (p_hat + z ** 2 / (2 * total)) / denom
+        margin = z * math.sqrt((p_hat * (1 - p_hat) + z ** 2 / (4 * total)) / total) / denom
+        return {
+            "lower": round(max(0.0, centre - margin), 4),
+            "upper": round(min(1.0, centre + margin), 4),
+            "center": round(centre, 4),
+        }
+
+    public_ci = wilson_interval(public_solved, len(public_results))
+    fresh_ci = wilson_interval(fresh_solved, len(fresh_results))
+    # Gap CI (conservative: use extremes)
+    gap_ci = {
+        "lower": round(public_ci["lower"] - fresh_ci["upper"], 4),
+        "upper": round(public_ci["upper"] - fresh_ci["lower"], 4),
+    }
+
     is_genuine_experiment = (generator.generator_mode == "live")
     if is_genuine_experiment:
         generator_warning = None
@@ -454,6 +479,7 @@ def run_experiment(req: ExperimentRequest):
             "solved": public_solved,
             "accuracy": round(public_acc, 4),
             "solver": req.solver,
+            "confidence_interval_95": public_ci,
         },
         "fresh": {
             "dataset_name": "arc-task-gen" if is_genuine_experiment else "fallback-local",
@@ -464,8 +490,10 @@ def run_experiment(req: ExperimentRequest):
             "accuracy": round(fresh_acc, 4),
             "solver": req.solver,
             "generator_mode": generator.generator_mode,
+            "confidence_interval_95": fresh_ci,
         },
         "gap": round(gap, 4),
+        "gap_confidence_interval_95": gap_ci,
         "distribution": {
             "public": compute_stats(public_subset),
             "fresh": compute_stats(fresh_task_map),
